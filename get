@@ -43,8 +43,7 @@ SEE ALSO
 parser.add_argument("-v", "--verbose", action="store_true", help="be verbose")
 args = parser.parse_args()
 
-genius = lyricsgenius.Genius(geniusapi.token, verbose=args.verbose, remove_section_headers=False)
-genius.verbose = args.verbose
+genius = lyricsgenius.Genius(geniusapi.token, verbose=args.verbose)
 
 def get(artist: str, title: str, path: str = None):
     song = genius.search_song(title, artist)
@@ -59,9 +58,6 @@ def get(artist: str, title: str, path: str = None):
         with open(path, 'w') as file:
             file.write(lyrics)
     return 0
-
-#get('The Rolling Stones', 'Not Fade Away')
-#get('The Rolling Stones', 'Now I’ve Got a Witness')
 
 value = 0
 for line in sys.stdin:
