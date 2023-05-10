@@ -1,0 +1,61 @@
+#!/usr/bin/python
+
+import argparse
+import pathlib
+import sys
+import textwrap
+
+import mutagen
+
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description="Tell when/which lyrics are needed",
+    epilog=textwrap.dedent(
+        """
+SYNOPSIS
+    ls *.flac | need
+
+DESCRIPTION
+    Given a list of source music files on standard input, tell when/which
+    lyrics are needed by outputting a tab delimited line with the name of
+    the Artist, the Title of the song (both from tags in the source music
+    file) and the name of the target lyrics file (which is derived from the
+    name of the source music file).
+
+    The target lyrics file associated with a source music file shares the
+    same name except for the extension which is 'txt'. If the lyrics file
+    already exists then it is not needed (unless it is old and we care)
+    so a corresponding line is not output.
+
+EXAMPLES
+    For all flac files under the current directory, find which need lyrics
+    and get them.
+
+        find . -name \*.flac | need | get
+
+SEE ALSO
+     get
+"""
+    ),
+)
+parser.add_argument("-o", "--old", action="store_true", help="need lyrics if old")
+args = parser.parse_args()
+
+
+def age(path: pathlib.Path):
+    return path.stat().st_mtime
+
+
+for line in sys.stdin:
+    music = pathlib.Path(line.rstrip())
+    if not music.exists():
+        continue
+    lyrics = music.with_suffix(".txt")
+    if lyrics.exists() and (not args.old or age(music) < age(lyrics)):
+        continue
+    try:
+        tags = mutagen.File(music)
+    except mutagen.MutagenError:
+        continue
+    else:
+        print("\t".join([tags["artist"][0], tags["title"][0], str(lyrics)]))

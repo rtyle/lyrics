@@ -1,0 +1,70 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import pathlib
+import sys
+import textwrap
+
+import lyricsgenius
+
+import geniusapi
+
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description="Get the lyrics for each artist/title/file line input",
+    epilog=textwrap.dedent(
+        """
+SYNOPSIS
+    echo -e "$ARTIST\\t$TITLE\\t$PATH" | get
+
+DESCRIPTION
+    Get the lyrics for the ARTIST's song TITLE and write them its file at PATH,
+    for each line input.
+    ARTIST, TITLE and PATH are tab delimited.
+
+    If the PATH specification is missing
+    then the lyrics are written to standard output.
+
+    All errors are written to standard error.
+    Exit with the number of failures.
+
+EXAMPLES
+    For all flac files under the current directory, find which need lyrics
+    and get them.
+
+        find . -name \*.flac | need | get
+
+SEE ALSO
+    need
+"""
+    ),
+)
+parser.add_argument("-v", "--verbose", action="store_true", help="be verbose")
+args = parser.parse_args()
+
+genius = lyricsgenius.Genius(geniusapi.token, verbose=args.verbose, remove_section_headers=False)
+genius.verbose = args.verbose
+
+def get(artist: str, title: str, path: str = None):
+    song = genius.search_song(title, artist)
+    if song is None or not hasattr(song, "lyrics"):
+        return 1
+    lyrics = song.lyrics
+    if (not lyrics.endswith("\n")):
+        lyrics += "\n"
+    if path is None:
+        print(lyrics)
+    else:
+        with open(path, 'w') as file:
+            file.write(lyrics)
+    return 0
+
+#get('The Rolling Stones', 'Not Fade Away')
+#get('The Rolling Stones', 'Now I’ve Got a Witness')
+
+value = 0
+for line in sys.stdin:
+    value += get(*line.rstrip().split("\t"))
+
+sys.exit(value)
