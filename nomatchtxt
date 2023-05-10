@@ -1,0 +1,98 @@
+#!/usr/bin/perl
+
+use strict;
+use File::Spec();
+use File::Glob();
+use Getopt::Long();
+use Pod::Usage();
+
+my $help;
+my $man;
+my $rename;
+Getopt::Long::GetOptions(
+	'h|help'	=> \$help,
+	'm|man'		=> \$man,
+	'r|rename'	=> \$rename)
+    or Pod::Usage::pod2usage(2);
+Pod::Usage::pod2usage(1) if $help;
+Pod::Usage::pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+while (<STDIN>) {
+    chomp;
+    my ($v, $d, $f) = File::Spec->splitpath($_);
+    my ($p, $b) = split(q{ }, $f, 2);
+    $b =~ m{(.*)\.(.*)};
+    my ($m, $s) = ($1, $2);
+    my $n = File::Spec->catpath($v, $d, $p . q{ } . $m . q{.txt});
+    my @o = File::Glob::bsd_glob(
+	File::Spec->catpath($v, $d, $p . q{ }) . q{*.txt});
+    if (1 < scalar(@o)) {
+	foreach my $o (@o) {
+	    print STDERR $o, "\n";
+	}
+    } else {
+	foreach my $o (@o) {
+	    if ($o ne $n) {
+		print join("\t", $o, $n);
+		if ($rename) {
+		    if (!rename($o, $n)) {
+			print "\t", q{rename failed};
+		    }
+		}
+		print "\n";
+	    }
+	}
+    }
+}
+
+__END__
+
+=head1 NAME
+
+nomatchtxt - Identify txt files that don't match file names input
+
+=head1 SYNOPSIS
+
+nomatchtxt [--help|--man]
+
+find . -name \*.flac -o -name \*.mp3 | nomatchtxt [--rename] 
+
+=head1 DESCRIPTION
+
+Read file names input
+and expect that each file might have matching files with .txt suffixes.
+Matches are determined by keeping the space-delimited prefix of the original,
+replacing the dot-delimited suffix with 'txt'
+and globbing the rest in the middle.
+
+If there no matches, nothing is done.
+If there is more than one match, the matching file names are printed to STDERR.
+
+If there is one match but the middle part doesn't exactly match
+(like the prefix and suffix do),
+then the file names (original non-matching and proposed matching)
+are printed to STDOUT delimited with a tab.
+If the rename option is specified then the
+original file is renamed to match as proposed.
+
+=head1 OPTIONS
+
+=over4
+
+=item B<-h, --help>
+
+Print usage information.
+
+=item B<-m, --man>
+
+Print this manual page.
+
+=item B<-r, --rename>
+
+Rename non-matching txt files.
+
+=back
+
+=cut
+
+# vim: set sw=4 filetype=perl :
