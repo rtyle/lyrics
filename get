@@ -33,7 +33,7 @@ EXAMPLES
     For all flac files under the current directory, find which need lyrics
     and get them.
 
-        find . -name \*.flac | need | get
+        find . -name \\*.flac | need | get
 
 SEE ALSO
     need
