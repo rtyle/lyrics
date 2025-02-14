@@ -7,7 +7,7 @@
 Get the source from this repository.
 
 	git clone https://github.com/rtyle/lyrics.git
-	git submodule update --init --recursive
+	(cd lyrics; git submodule update --init --recursive)
 
 This implementation scrapes lyrics from **genius.com** using their API which requires an access token.
 Acquiring such is documented here:
